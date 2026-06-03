@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>КотоСеть — Полная версия</title>
+  <style>
+    :root { --bg: #1a1a2e; --card: #16213e; --btn: #e94560; --text: #eee; --input: #0f3460; --shadow: 0 4px 15px rgba(0,0,0,0.3); }
+    body.light { --bg: #f8f9fa; --card: #ffffff; --btn: #c23152; --text: #222; --input: #e9ecef; --shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); text-align: center; padding: 20px; transition: background 0.3s, color 0.3s; }
+    body.animations-enabled .cat-card { animation: fadeInUp 0.5s ease both; }
+    body.animations-enabled .section { animation: fadeInUp 0.4s ease; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+    @keyframes flyUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(1.5); } }
+    .fly-emoji { position: fixed; pointer-events: none; z-index: 9999; animation: flyUp 0.8s ease-out forwards; }
+    button, input, textarea, select { padding: 10px 14px; margin: 5px; border-radius: 8px; border: none; font-size: 14px; background: var(--input); color: var(--text); transition: all 0.3s; }
+    button { background: var(--btn); color: white; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+    button:hover { transform: translateY(-2px); box-shadow: 0 8px 15px rgba(233,69,96,0.3); }
+    .hidden { display: none !important; }
+    .section { margin-top: 20px; }
+    .cat-card { background: var(--card); border-radius: 16px; padding: 15px; margin: 15px auto; max-width: 450px; text-align: left; box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s; }
+    .cat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(0,0,0,0.4); }
+    .cat-card img { width: 100%; height: 250px; object-fit: cover; border-radius: 12px; cursor: pointer; }
+    .author { color: var(--btn); cursor: pointer; text-decoration: underline; }
+    .reactions { display: flex; gap: 15px; margin: 8px 0; }
+    .reaction-btn { background: none; border: none; font-size: 24px; cursor: pointer; padding: 4px 8px; border-radius: 20px; color: #aaa; transition: all 0.2s; }
+    .reaction-btn.active { color: var(--btn); background: rgba(233,69,96,0.2); animation: pop 0.3s ease; }
+    .comments-section { margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; }
+    .comment { margin: 5px 0; font-size: 13px; display: flex; align-items: center; }
+    .comment .nick { color: var(--btn); cursor: pointer; margin-right: 5px; }
+    .report-btn { background: none; border: none; cursor: pointer; font-size: 14px; margin-left: 5px; }
+    .delete-comment-btn { background: none; color: #ff6b6b; cursor: pointer; margin-left: auto; font-size: 16px; }
+    .comment-form { display: flex; gap: 5px; margin-top: 8px; }
+    .comment-form input { flex: 1; }
+    .admin-panel { background: var(--card); padding: 15px; border-radius: 12px; max-width: 600px; margin: 15px auto; text-align: left; box-shadow: var(--shadow); }
+    .modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index:1000; animation: pop 0.3s ease; }
+    .modal img { max-width: 90%; max-height: 60vh; border-radius: 12px; }
+    .close-btn { position: absolute; top: 20px; right: 40px; color: white; font-size: 40px; cursor: pointer; }
+    .notif-badge { background: var(--btn); border-radius: 50%; padding: 2px 6px; font-size: 12px; color: white; }
+    .chat-container { background: var(--card); border-radius: 10px; padding: 10px; margin: 10px auto; max-width: 500px; text-align: left; box-shadow: var(--shadow); }
+    .chat-messages { max-height: 300px; overflow-y: auto; margin-bottom: 10px; }
+    .chat-msg { margin: 3px 0; }
+    .chat-msg .sender { font-weight: bold; color: var(--btn); }
+    .achievement { background: #e94560; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin: 0 3px; display: inline-block; }
+    .online-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; }
+    .online { background: #4caf50; box-shadow: 0 0 5px #4caf50; } .offline { background: #888; }
+    .delete-msg-btn { background: none; color: #ff6b6b; cursor: pointer; margin-left: 10px; font-size: 12px; }
+    .search-results { max-height: 150px; overflow-y: auto; margin-top: 5px; }
+    .search-result-item { background: var(--input); padding: 5px; border-radius: 4px; margin: 2px 0; cursor: pointer; }
+    .search-result-item:hover { background: var(--btn); }
+    .dropdown-menu { position: absolute; top: 40px; right: 0; background: var(--card); border-radius: 8px; padding: 10px; box-shadow: var(--shadow); z-index: 20; min-width: 200px; text-align: left; }
+    .dropdown-menu button { display: block; width: 100%; background: none; color: var(--text); box-shadow: none; margin: 2px 0; text-align: left; }
+    .dropdown-menu button:hover { background: var(--btn); color: white; }
+    .settings-checkbox { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; }
+  </style>
+</head>
+<body class="dark animations-enabled">
+  <h1>🐱 КотоСеть</h1>
+
+  <!-- Вход / Регистрация -->
+  <div id="login-section">
+    <h2>Вход / Регистрация</h2>
+    <button id="showLoginTab" class="tab-btn active">Вход</button>
+    <button id="showRegisterTab" class="tab-btn">Регистрация</button>
+    <div id="login-form">
+      <input type="text" id="loginNick" placeholder="Ник"><br>
+      <input type="password" id="loginPassword" placeholder="Пароль"><br>
+      <button id="loginBtn">Войти</button>
+    </div>
+    <div id="register-form" class="hidden">
+      <input type="text" id="regNick" placeholder="Придумайте ник"><br>
+      <input type="password" id="regPassword" placeholder="Придумайте пароль"><br>
+      <button id="registerBtn">Зарегистрироваться</button>
+    </div>
+    <p id="login-error" style="color:red;"></p>
+  </div>
+
+  <!-- Основной интерфейс -->
+  <div id="main-section" class="hidden">
+    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:5px; align-items:center;">
+      <span>Вы: <b id="currentNickname"></b></span>
+      <button id="logoutBtn">🚪 Выйти</button>
+      <div style="position:relative;">
+        <button id="switchAccountBtn">🔄 Сменить аккаунт</button>
+        <div id="accountsDropdown" class="dropdown-menu hidden"></div>
+      </div>
+      <button id="showUploadBtn">➕ Загрузить</button>
+      <button id="showFeedBtn">📋 Лента</button>
+      <button id="showTopBtn">🏆 Топ</button>
+      <button id="showChatBtn">💬 Чат</button>
+      <button id="showAdminBtn" class="admin-only hidden">🔧 Модерация</button>
+      <button id="showUsersBtn" class="admin-only hidden">👥 Пользователи</button>
+      <button id="showReportsBtn" class="admin-only hidden">🚩 Жалобы</button>
+      <button id="showAllChatsBtn" class="admin-only hidden">📨 Все чаты</button>
+      <button id="showActionLogBtn" class="admin-only hidden">📜 Лог</button>
+      <button id="themeToggleBtn">🌓</button>
+      <button id="openSettingsBtn">⚙️</button>
+      <div class="nickname-change" id="nicknameChangeDiv">
+        <input type="text" id="newNickname" placeholder="Новый ник">
+        <button id="changeNicknameBtn">✏️</button>
+      </div>
+      <div style="position:relative;">
+        <button id="notifBtn">🔔 <span id="notifCount" class="notif-badge">0</span></button>
+        <div id="notifDropdown" class="hidden dropdown-menu" style="top:40px; right:0;"></div>
+      </div>
+    </div>
+
+    <!-- Настройки -->
+    <div id="settings-modal" class="modal hidden">
+      <span class="close-btn" id="closeSettingsBtn">&times;</span>
+      <div class="admin-panel" style="width:350px;">
+        <h2>⚙️ Настройки анимаций</h2>
+        <div class="settings-checkbox">
+          <span>Анимация карточек</span>
+          <input type="checkbox" id="settingCardAnim" checked>
+        </div>
+        <div class="settings-checkbox">
+          <span>Летающие эмодзи</span>
+          <input type="checkbox" id="settingEmojiAnim" checked>
+        </div>
+        <div class="settings-checkbox">
+          <span>Анимация появления</span>
+          <input type="checkbox" id="settingFadeAnim" checked>
+        </div>
+        <button id="saveSettingsBtn">Сохранить</button>
+      </div>
+    </div>
+
+    <!-- Лента -->
+    <div id="feed-section" class="section">
+      <h2>Одобренные котики</h2>
+      <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+        <input type="text" id="searchName" placeholder="Поиск по имени..." style="width:200px;">
+        <select id="filterAuthor"><option value="">Все авторы</option></select>
+        <select id="sortOrder"><option value="newest">Сначала новые</option><option value="oldest">Сначала старые</option><option value="popular">По популярности</option></select>
+        <label><input type="checkbox" id="subOnly"> Только подписки</label>
+        <button id="applyFilterBtn">Применить</button>
+      </div>
+      <div id="cats-feed"></div>
+    </div>
+
+    <!-- Загрузка -->
+    <div id="upload-section" class="section hidden">
+      <h2>Загрузить кота</h2>
+      <input type="text" id="catName" placeholder="Имя кота"><br>
+      <textarea id="catDesc" placeholder="Описание" rows="3"></textarea><br>
+      <input type="file" id="catPhoto" accept="image/*"><br>
+      <button id="uploadCatBtn">Загрузить</button>
+      <p id="upload-status"></p>
+      <button id="backFromUploadBtn">← Назад</button>
+    </div>
+
+    <!-- Топ -->
+    <div id="top-section" class="section hidden"><h2>🏆 Топ пользователей</h2><div id="top-list"></div></div>
+
+    <!-- Чат -->
+    <div id="chat-section" class="section hidden">
+      <h2>💬 Личные сообщения</h2>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+        <div style="background:var(--card); border-radius:10px; padding:10px; min-width:200px; box-shadow:var(--shadow);">
+          <input type="text" id="chatSearchInput" placeholder="Найти пользователя..." style="width:100%;" autocomplete="off">
+          <div id="chatSearchResults" class="search-results"></div>
+        </div>
+        <div id="chat-window" class="chat-container hidden" style="flex:1; min-width:300px;">
+          <div id="chat-with" style="font-weight:bold;"></div>
+          <div id="chat-messages" class="chat-messages"></div>
+          <div class="comment-form">
+            <input type="text" id="chat-input" placeholder="Сообщение...">
+            <button id="chat-send">Отправить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модерация -->
+    <div id="admin-section" class="section hidden"><h2>Модерация</h2><div id="admin-list"></div></div>
+
+    <!-- Пользователи -->
+    <div id="users-section" class="section hidden"><h2>Пользователи</h2>
+      <button id="clearUsersBtn" style="background:#ff6b6b; margin-bottom:10px;">🗑 Очистить всех (кроме создателя)</button>
+      <div id="users-list"></div>
+    </div>
+
+    <!-- Жалобы -->
+    <div id="reports-section" class="section hidden"><h2>🚩 Жалобы</h2><div id="reports-list"></div></div>
+
+    <!-- Все чаты -->
+    <div id="allchats-section" class="section hidden">
+      <h2>📨 Все переписки (админ)</h2>
+      <input type="text" id="allChatsSearch" placeholder="Поиск по сообщениям...">
+      <button id="allChatsSearchBtn">Искать</button>
+      <div id="allchats-list" class="chat-container" style="text-align:left;"></div>
+    </div>
+
+    <!-- История действий -->
+    <div id="actionlog-section" class="section hidden"><h2>📜 История действий</h2><div id="actionlog-list"></div></div>
+
+    <!-- Профиль -->
+    <div id="profile-section" class="section hidden">
+      <button id="backFromProfileBtn">← Назад</button>
+      <h2 id="profile-title"></h2>
+      <button id="profileMessageBtn" class="hidden">💬 Написать</button>
+      <button id="profileSubscribeBtn" class="hidden">⭐ Подписаться</button>
+      <div id="profile-cats"></div>
+    </div>
+  </div>
+
+  <!-- Модальное окно фото -->
+  <div id="photo-modal" class="modal hidden">
+    <span class="close-btn">&times;</span>
+    <img id="modal-image" src="" alt="">
+    <div style="display:flex; gap:20px; justify-content:center;">
+      <button class="reaction-btn modal-like" data-type="heart">❤️ <span class="reaction-count">0</span></button>
+      <button class="reaction-btn modal-like" data-type="paw">🐾 <span class="reaction-count">0</span></button>
+      <button class="reaction-btn modal-like" data-type="cat">😺 <span class="reaction-count">0</span></button>
+    </div>
+    <div id="modal-comments" class="admin-panel" style="max-height:200px; overflow-y:auto;"></div>
+    <div class="comment-form">
+      <input type="text" id="modal-comment-input" placeholder="Комментарий...">
+      <button id="modal-comment-send">Отправить</button>
+    </div>
+  </div>
+
+  <script>
+    // ---------- ХРАНИЛИЩЕ ----------
+    const loadData = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch (e) { return []; } };
+    const saveData = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
+    let users = loadData('catapp_users');
+    let cats = loadData('catapp_cats');
+    let messages = loadData('catapp_messages');
+    let actionLog = loadData('catapp_actionlog');
+    let settings = loadData('catapp_settings') || { cardAnim: true, emojiAnim: true, fadeAnim: true };
+    let savedAccounts = loadData('catapp_savedAccounts') || [];
+    let currentUser = null;
+    let currentTheme = localStorage.getItem('catapp_theme') || 'dark';
+    const CREATOR_NICK = 'навальный';
+    const CREATOR_PASS = '20130329';
+
+    // Сессия
+    const lastSession = loadData('catapp_lastSession');
+    if (lastSession && lastSession.nickname) {
+      const user = users.find(u => u.nickname === lastSession.nickname);
+      if (user && !(user.bannedUntil && user.bannedUntil > Date.now())) {
+        currentUser = { nickname: lastSession.nickname, isSuperAdmin: lastSession.isSuperAdmin, subscriptions: user.subscriptions || [] };
+        user.online = true;
+        user.lastSeen = Date.now();
+        saveData('catapp_users', users);
+      }
+    }
+
+    // Тема и анимации
+    const applyTheme = () => {
+      document.body.className = currentTheme;
+      document.getElementById('themeToggleBtn').textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+      document.body.classList.toggle('animations-enabled', settings.fadeAnim);
+    };
+    applyTheme();
+
+    document.getElementById('themeToggleBtn').onclick = () => {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('catapp_theme', currentTheme);
+      applyTheme();
+    };
+
+    // ---------- УВЕДОМЛЕНИЯ ----------
+    const getMyNotifications = () => {
+      if (!currentUser) return [];
+      const myCats = cats.filter(c => c.uploadedBy === currentUser.nickname).map(c => c.id);
+      const notifs = [];
+      cats.forEach(cat => {
+        if (!myCats.includes(cat.id)) return;
+        (cat.likes || {}).heart?.forEach(u => u !== currentUser.nickname && notifs.push({ type: 'like', catName: cat.name, from: u, reaction: 'heart' }));
+        (cat.likes || {}).paw?.forEach(u => u !== currentUser.nickname && notifs.push({ type: 'like', catName: cat.name, from: u, reaction: 'paw' }));
+        (cat.likes || {}).cat?.forEach(u => u !== currentUser.nickname && notifs.push({ type: 'like', catName: cat.name, from: u, reaction: 'cat' }));
+        (cat.comments || []).forEach(c => c.nickname !== currentUser.nickname && notifs.push({ type: 'comment', catName: cat.name, from: c.nickname, text: c.text }));
+      });
+      const mySubs = currentUser.subscriptions || [];
+      return mySubs.length ? notifs.filter(n => mySubs.includes(n.from)) : notifs;
+    };
+    const updateNotifBadge = () => document.getElementById('notifCount').textContent = getMyNotifications().length;
+    document.getElementById('notifBtn').onclick = () => {
+      const dd = document.getElementById('notifDropdown');
+      dd.classList.toggle('hidden');
+      dd.innerHTML = getMyNotifications().map(n => `<div>${n.from} ${n.type === 'like' ? `лайкнул(${n.reaction})` : 'прокомментировал'} "${n.catName}"</div>`).join('') || 'Нет уведомлений';
+    };
+
+    // ---------- ДОСТИЖЕНИЯ ----------
+    const getUserAchievements = nick => {
+      const a = [];
+      const userCats = cats.filter(c => c.status === 'approved' && c.uploadedBy === nick);
+      const totalCats = cats.filter(c => c.uploadedBy === nick).length;
+      const totalLikes = userCats.reduce((s, c) => s + (c.likes?.heart?.length || 0) + (c.likes?.paw?.length || 0) + (c.likes?.cat?.length || 0), 0);
+      if (userCats.length) a.push('🐱Первый котик');
+      if (totalCats >= 10) a.push('⭐10 загруженных');
+      if (totalLikes >= 100) a.push('❤️100 лайков');
+      return a;
+    };
+
+    // ---------- БАН ----------
+    const isBanned = nick => {
+      const u = users.find(u => u.nickname === nick);
+      if (!u?.bannedUntil) return false;
+      if (Date.now() > u.bannedUntil) { u.bannedUntil = null; u.banReason = ''; saveData('catapp_users', users); return false; }
+      return true;
+    };
+    const banUser = (nick, reason, dur) => {
+      if (nick === CREATOR_NICK) return alert('Нельзя забанить создателя');
+      let u = users.find(u => u.nickname === nick) || { nickname: nick, password: '', online: false, createdAt: Date.now(), lastSeen: Date.now(), subscriptions: [] };
+      if (!users.find(u => u.nickname === nick)) users.push(u);
+      u.bannedUntil = dur === 0 ? Number.MAX_SAFE_INTEGER : Date.now() + dur;
+      u.banReason = reason;
+      saveData('catapp_users', users);
+      actionLog.push({ action: 'ban', by: currentUser.nickname, target: nick, reason, time: Date.now() });
+      saveData('catapp_actionlog', actionLog);
+      if (currentUser?.nickname === nick) { currentUser = null; updateUI(); }
+      refreshUI();
+    };
+    const unbanUser = nick => {
+      const u = users.find(u => u.nickname === nick);
+      if (u) { u.bannedUntil = null; u.banReason = ''; saveData('catapp_users', users); actionLog.push({ action: 'unban', by: currentUser.nickname, target: nick, time: Date.now() }); saveData('catapp_actionlog', actionLog); refreshUI(); }
+    };
+    const showBanDialog = nick => {
+      if (nick === CREATOR_NICK) return alert('Нельзя');
+      const choice = prompt('Срок (1-час,2-сутки,3-навсегда):', '1');
+      if (!choice) return;
+      const reason = prompt('Причина:', '');
+      if (reason === null) return;
+      const dur = choice === '1' ? 3600000 : choice === '2' ? 86400000 : 0;
+      banUser(nick, reason, dur);
+    };
+
+    // ---------- ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК ----------
+    const sections = ['feed-section','upload-section','top-section','chat-section','admin-section','users-section','reports-section','allchats-section','actionlog-section','profile-section'];
+    const showSection = id => { sections.forEach(s => document.getElementById(s).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); };
+    document.getElementById('showFeedBtn').onclick = () => { showSection('feed-section'); renderFeed(); };
+    document.getElementById('showTopBtn').onclick = () => { showSection('top-section'); renderTop(); };
+    document.getElementById('showChatBtn').onclick = () => { showSection('chat-section'); renderChatSearch(); };
+    document.getElementById('showAdminBtn').onclick = () => { showSection('admin-section'); renderAdmin(); };
+    document.getElementById('showUsersBtn').onclick = () => { showSection('users-section'); renderUsers(); };
+    document.getElementById('showReportsBtn').onclick = () => { showSection('reports-section'); renderReports(); };
+    document.getElementById('showAllChatsBtn').onclick = () => { showSection('allchats-section'); renderAllChats(); };
+    document.getElementById('showActionLogBtn').onclick = () => { showSection('actionlog-section'); renderActionLog(); };
+    document.getElementById('showUploadBtn').onclick = () => { showSection('upload-section'); };
+    document.getElementById('backFromUploadBtn').onclick = () => { showSection('feed-section'); renderFeed(); };
+    document.getElementById('backFromProfileBtn').onclick = () => { showSection('feed-section'); renderFeed(); };
+
+    // ---------- ВХОД / РЕГИСТРАЦИЯ ----------
+    document.getElementById('showLoginTab').onclick = () => { document.getElementById('login-form').classList.remove('hidden'); document.getElementById('register-form').classList.add('hidden'); };
+    document.getElementById('showRegisterTab').onclick = () => { document.getElementById('register-form').classList.remove('hidden'); document.getElementById('login-form').classList.add('hidden'); };
+
+    document.getElementById('registerBtn').onclick = () => {
+      const nick = document.getElementById('regNick').value.trim();
+      const pass = document.getElementById('regPassword').value.trim();
+      if (!nick || !pass) return document.getElementById('login-error').textContent = 'Заполните поля';
+      if (nick === CREATOR_NICK) return document.getElementById('login-error').textContent = 'Ник зарезервирован';
+      if (users.find(u => u.nickname === nick)) return document.getElementById('login-error').textContent = 'Такой ник уже есть';
+      users.push({ nickname: nick, password: pass, online: false, bannedUntil: null, createdAt: Date.now(), lastSeen: Date.now(), subscriptions: [] });
+      saveData('catapp_users', users);
+      performLogin(nick, pass, false);
+    };
+
+    document.getElementById('loginBtn').onclick = () => {
+      const nick = document.getElementById('loginNick').value.trim();
+      const pass = document.getElementById('loginPassword').value.trim();
+      if (!nick || !pass) return document.getElementById('login-error').textContent = 'Введите ник и пароль';
+      if (nick === CREATOR_NICK && pass === CREATOR_PASS) {
+        if (!users.find(u => u.nickname === CREATOR_NICK)) {
+          users.push({ nickname: CREATOR_NICK, password: CREATOR_PASS, online: false, bannedUntil: null, createdAt: Date.now(), lastSeen: Date.now(), subscriptions: [] });
+          saveData('catapp_users', users);
+        }
+        return performLogin(CREATOR_NICK, CREATOR_PASS, true);
+      }
+      const user = users.find(u => u.nickname === nick);
+      if (!user || user.password !== pass) return document.getElementById('login-error').textContent = 'Неверный ник или пароль';
+      if (isBanned(nick)) return document.getElementById('login-error').textContent = 'Вы забанены';
+      performLogin(nick, pass, false);
+    };
+
+    const performLogin = (nickname, password, isSuperAdmin) => {
+      if (isBanned(nickname)) return alert('Вы забанены');
+      currentUser = { nickname, isSuperAdmin, subscriptions: [] };
+      let user = users.find(u => u.nickname === nickname);
+      if (user) {
+        user.online = true; user.lastSeen = Date.now();
+        if (!user.password) user.password = password;
+        currentUser.subscriptions = user.subscriptions || [];
+      } else {
+        user = { nickname, password, online: true, bannedUntil: null, createdAt: Date.now(), lastSeen: Date.now(), subscriptions: [] };
+        users.push(user);
+      }
+      saveData('catapp_users', users);
+      saveData('catapp_lastSession', { nickname, isSuperAdmin });
+      if (!savedAccounts.find(a => a.nickname === nickname)) { savedAccounts.push({ nickname, isSuperAdmin }); saveData('catapp_savedAccounts', savedAccounts); }
+      updateUI();
+    };
+
+    document.getElementById('logoutBtn').onclick = () => {
+      if (currentUser) {
+        const u = users.find(u => u.nickname === currentUser.nickname);
+        if (u) { u.online = false; u.lastSeen = Date.now(); saveData('catapp_users', users); }
+      }
+      currentUser = null;
+      localStorage.removeItem('catapp_lastSession');
+      updateUI();
+    };
+
+    // ---------- МУЛЬТИАККАУНТ ----------
+    const renderAccountSwitcher = () => {
+      const dd = document.getElementById('accountsDropdown');
+      dd.innerHTML = '';
+      savedAccounts.forEach(a => {
+        const btn = document.createElement('button');
+        btn.textContent = '@' + a.nickname + (a.isSuperAdmin ? ' 👑' : '');
+        btn.onclick = () => switchToAccount(a.nickname);
+        dd.appendChild(btn);
+      });
+      if (!savedAccounts.length) dd.innerHTML = '<div style="padding:5px;">Нет сохранённых аккаунтов</div>';
+    };
+    document.getElementById('switchAccountBtn').onclick = () => { renderAccountSwitcher(); document.getElementById('accountsDropdown').classList.toggle('hidden'); };
+    const switchToAccount = nickname => {
+      if (currentUser?.nickname === nickname) return;
+      if (currentUser) { const u = users.find(u => u.nickname === currentUser.nickname); if (u) { u.online = false; u.lastSeen = Date.now(); saveData('catapp_users', users); } }
+      const acc = savedAccounts.find(a => a.nickname === nickname);
+      if (!acc) return;
+      const user = users.find(u => u.nickname === nickname);
+      if (!user || isBanned(nickname)) return alert('Невозможно');
+      currentUser = { nickname, isSuperAdmin: acc.isSuperAdmin, subscriptions: user.subscriptions || [] };
+      user.online = true; user.lastSeen = Date.now();
+      saveData('catapp_users', users);
+      saveData('catapp_lastSession', { nickname, isSuperAdmin: acc.isSuperAdmin });
+      document.getElementById('accountsDropdown').classList.add('hidden');
+      updateUI();
+    };
+
+    // ---------- СМЕНА НИКА ----------
+    document.getElementById('changeNicknameBtn').onclick = () => {
+      if (!currentUser || currentUser.isSuperAdmin) return alert('Недоступно');
+      const newNick = document.getElementById('newNickname').value.trim();
+      if (!newNick) return;
+      if (users.find(u => u.nickname === newNick)) return alert('Ник занят');
+      const old = currentUser.nickname;
+      const u = users.find(u => u.nickname === old);
+      if (u) u.nickname = newNick;
+      cats.forEach(c => {
+        ['heart','paw','cat'].forEach(t => { const arr = c.likes?.[t]; if (arr) { const i = arr.indexOf(old); if (i !== -1) arr[i] = newNick; } });
+        c.comments?.forEach(cm => cm.nickname === old && (cm.nickname = newNick));
+        if (c.uploadedBy === old) c.uploadedBy = newNick;
+      });
+      users.forEach(u => u.subscriptions?.includes(old) && (u.subscriptions = u.subscriptions.filter(n => n !== old).concat(newNick)));
+      currentUser.nickname = newNick;
+      saveData('catapp_users', users); saveData('catapp_cats', cats);
+      saveData('catapp_lastSession', { nickname: newNick, isSuperAdmin: currentUser.isSuperAdmin });
+      const idx = savedAccounts.findIndex(a => a.nickname === old);
+      if (idx !== -1) { savedAccounts[idx].nickname = newNick; saveData('catapp_savedAccounts', savedAccounts); }
+      refreshUI();
+    };
+
+    // ---------- UI ----------
+    const updateUI = () => {
+      if (!currentUser) { document.getElementById('login-section').classList.remove('hidden'); document.getElementById('main-section').classList.add('hidden'); return; }
+      document.getElementById('login-section').classList.add('hidden');
+      document.getElementById('main-section').classList.remove('hidden');
+      document.getElementById('currentNickname').textContent = currentUser.nickname;
+      document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !currentUser.isSuperAdmin));
+      document.getElementById('nicknameChangeDiv').classList.toggle('hidden', currentUser.isSuperAdmin);
+      showSection('feed-section'); renderFeed(); updateNotifBadge();
+    };
+    const refreshUI = () => {
+      if (!currentUser) return;
+      document.getElementById('currentNickname').textContent = currentUser.nickname;
+      !document.getElementById('feed-section').classList.contains('hidden') && renderFeed();
+      !document.getElementById('top-section').classList.contains('hidden') && renderTop();
+      !document.getElementById('chat-section').classList.contains('hidden') && renderChatSearch();
+      !document.getElementById('admin-section').classList.contains('hidden') && renderAdmin();
+      !document.getElementById('users-section').classList.contains('hidden') && renderUsers();
+      !document.getElementById('reports-section').classList.contains('hidden') && renderReports();
+      !document.getElementById('allchats-section').classList.contains('hidden') && renderAllChats();
+      !document.getElementById('actionlog-section').classList.contains('hidden') && renderActionLog();
+      const profileNick = document.getElementById('profile-section').dataset.nick;
+      if (profileNick && !document.getElementById('profile-section').classList.contains('hidden')) openProfile(profileNick, true);
+      updateNotifBadge();
+    };
+
+    // ---------- ЛЕТАЮЩИЕ ЭМОДЗИ ----------
+    const spawnEmoji = (emoji, x, y) => {
+      if (!settings.emojiAnim) return;
+      const span = document.createElement('span');
+      span.className = 'fly-emoji'; span.textContent = emoji;
+      span.style.left = x + 'px'; span.style.top = y + 'px';
+      document.body.appendChild(span);
+      span.addEventListener('animationend', () => span.remove());
+    };
+
+    // ---------- КАРТОЧКА КОТА ----------
+    const createCatCard = cat => {
+      const card = document.createElement('div');
+      card.className = 'cat-card'; card.id = 'cat-' + cat.id;
+      const img = document.createElement('img'); img.src = cat.imageUrl; img.onclick = () => openPhotoModal(cat.id); card.appendChild(img);
+      const info = document.createElement('div'); info.className = 'cat-info';
+      info.innerHTML = `<b>${cat.name}</b> от <span class="author">@${cat.uploadedBy}</span>${cat.description ? `<br><small>${cat.description}</small>` : ''}`;
+      info.querySelector('.author').onclick = e => { e.stopPropagation(); openProfile(cat.uploadedBy); };
+
+      if (currentUser && cat.uploadedBy !== currentUser.nickname) {
+        const msg = document.createElement('button'); msg.innerHTML = '💬'; msg.title = 'Написать';
+        msg.onclick = e => { e.stopPropagation(); showSection('chat-section'); openChat(cat.uploadedBy); };
+        info.appendChild(msg);
+      }
+      if (currentUser?.isSuperAdmin) {
+        const ban = document.createElement('button'); ban.textContent = '🚫'; ban.onclick = e => { e.stopPropagation(); showBanDialog(cat.uploadedBy); };
+        const del = document.createElement('button'); del.textContent = '🗑'; del.className = 'delete-post-btn';
+        del.onclick = e => { e.stopPropagation(); if (confirm('Удалить?')) { cats = cats.filter(c => c.id !== cat.id); saveData('catapp_cats', cats); actionLog.push({ action: 'delete_post', by: currentUser.nickname, target: cat.id, time: Date.now() }); saveData('catapp_actionlog', actionLog); renderFeed(); } };
+        info.appendChild(ban); info.appendChild(del);
+      }
+      if (currentUser?.nickname === cat.uploadedBy) {
+        const edit = document.createElement('button'); edit.textContent = '✏️'; edit.title = 'Редактировать';
+        edit.onclick = e => { e.stopPropagation(); const name = prompt('Имя', cat.name); if (name !== null) { cat.name = name; cat.description = prompt('Описание', cat.description || '') || cat.description; saveData('catapp_cats', cats); renderFeed(); } };
+        info.appendChild(edit);
+      }
+      if (currentUser && !currentUser.isSuperAdmin) {
+        const rep = document.createElement('button'); rep.textContent = '🚩'; rep.title = 'Пожаловаться';
+        rep.onclick = e => { e.stopPropagation(); const reason = prompt('Причина:'); if (reason) { cat.reports = cat.reports || []; cat.reports.push({ type: 'post', by: currentUser.nickname, reason, time: Date.now() }); saveData('catapp_cats', cats); alert('Жалоба отправлена'); } };
+        info.appendChild(rep);
+      }
+      card.appendChild(info);
+
+      const reactions = document.createElement('div'); reactions.className = 'reactions';
+      const likes = cat.likes || { heart: [], paw: [], cat: [] };
+      ['heart','paw','cat'].forEach(t => {
+        const btn = document.createElement('button'); btn.className = 'reaction-btn';
+        btn.innerHTML = (t === 'heart' ? '❤️' : t === 'paw' ? '🐾' : '😺') + `<span class="reaction-count">${likes[t]?.length || 0}</span>`;
+        btn.dataset.type = t;
+        btn.classList.toggle('active', currentUser && likes[t]?.includes(currentUser.nickname));
+        btn.onclick = e => { e.stopPropagation(); handleReaction(cat.id, t, e); };
+        reactions.appendChild(btn);
+      });
+      card.appendChild(reactions);
+
+      const comDiv = document.createElement('div'); comDiv.className = 'comments-section';
+      (cat.comments || []).forEach((c, idx) => {
+        const div = document.createElement('div'); div.className = 'comment';
+        div.innerHTML = `<span class="nick">@${c.nickname}</span>: ${c.text}`;
+        div.querySelector('.nick').onclick = e => { e.stopPropagation(); openProfile(c.nickname); };
+        if (currentUser && currentUser.nickname !== c.nickname && !currentUser.isSuperAdmin) {
+          const rep = document.createElement('button'); rep.className = 'report-btn'; rep.innerHTML = '🚩';
+          rep.onclick = e => { e.stopPropagation(); reportComment(cat.id, c.id); };
+          div.appendChild(rep);
+        }
+        if (currentUser?.isSuperAdmin) {
+          const del = document.createElement('span'); del.className = 'delete-comment-btn'; del.textContent = '✖';
+          del.onclick = e => { e.stopPropagation(); deleteComment(cat.id, idx); };
+          div.appendChild(del);
+        }
+        comDiv.appendChild(div);
+      });
+      if (currentUser && !isBanned(currentUser.nickname)) {
+        const form = document.createElement('div'); form.className = 'comment-form';
+        const inp = document.createElement('input'); inp.placeholder = 'Комментарий...';
+        const send = document.createElement('button'); send.textContent = 'Отправить';
+        send.onclick = e => { e.stopPropagation(); handleComment(cat.id, inp.value.trim()); inp.value = ''; };
+        form.appendChild(inp); form.appendChild(send); comDiv.appendChild(form);
+      }
+      card.appendChild(comDiv);
+      return card;
+    };
+
+    const reportComment = (catId, commentId) => {
+      if (!currentUser) return;
+      const reason = prompt('Причина жалобы на комментарий:');
+      if (!reason) return;
+      const cat = cats.find(c => c.id === catId);
+      if (!cat) return;
+      cat.reports = cat.reports || [];
+      cat.reports.push({ type: 'comment', commentId, by: currentUser.nickname, reason, time: Date.now() });
+      saveData('catapp_cats', cats);
+      alert('Жалоба отправлена');
+    };
+
+    const handleReaction = (catId, type, event) => {
+      if (!currentUser || isBanned(currentUser.nickname)) return;
+      const cat = cats.find(c => c.id === catId);
+      if (!cat) return;
+      if (!cat.likes) cat.likes = { heart: [], paw: [], cat: [] };
+      const arr = cat.likes[type];
+      const idx = arr.indexOf(currentUser.nickname);
+      idx === -1 ? (arr.push(currentUser.nickname), settings.emojiAnim && spawnEmoji({ heart: '❤️', paw: '🐾', cat: '😺' }[type], event.clientX, event.clientY)) : arr.splice(idx, 1);
+      saveData('catapp_cats', cats);
+      const card = document.getElementById('cat-' + catId);
+      if (card) card.replaceWith(createCatCard(cat));
+      updateNotifBadge();
+    };
+
+    const handleComment = (catId, text) => {
+      if (!currentUser || isBanned(currentUser.nickname) || !text) return;
+      const cat = cats.find(c => c.id === catId);
+      if (!cat) return;
+      if (!cat.comments) cat.comments = [];
+      cat.comments.push({ id: Date.now(), nickname: currentUser.nickname, text, timestamp: Date.now() });
+      saveData('catapp_cats', cats);
+      const card = document.getElementById('cat-' + catId);
+      if (card) card.replaceWith(createCatCard(cat));
+      updateNotifBadge();
+    };
+
+    const deleteComment = (catId, idx) => {
+      const cat = cats.find(c => c.id === catId);
+      if (!cat?.comments) return;
+      const cid = cat.comments[idx]?.id;
+      cat.comments.splice(idx, 1);
+      if (cat.reports) cat.reports = cat.reports.filter(r => r.type !== 'comment' || r.commentId !== cid);
+      saveData('catapp_cats', cats);
+      const card = document.getElementById('cat-' + catId);
+      if (card) card.replaceWith(createCatCard(cat));
+    };
+
+    // ---------- ЛЕНТА ----------
+    const renderFeed = () => {
+      const feed = document.getElementById('cats-feed');
+      let list = cats.filter(c => c.status === 'approved');
+      const s = document.getElementById('searchName').value.trim().toLowerCase();
+      const a = document.getElementById('filterAuthor').value;
+      const sort = document.getElementById('sortOrder').value;
+      const sub = document.getElementById('subOnly').checked;
+      if (s) list = list.filter(c => c.name.toLowerCase().includes(s));
+      if (a) list = list.filter(c => c.uploadedBy === a);
+      if (sub && currentUser) { const subs = currentUser.subscriptions || []; list = list.filter(c => subs.includes(c.uploadedBy)); }
+      if (sort === 'newest') list.sort((a, b) => b.id - a.id);
+      else if (sort === 'oldest') list.sort((a, b) => a.id - b.id);
+      else if (sort === 'popular') list.sort((a, b) => ((b.likes?.heart?.length||0)+(b.likes?.paw?.length||0)+(b.likes?.cat?.length||0)) - ((a.likes?.heart?.length||0)+(a.likes?.paw?.length||0)+(a.likes?.cat?.length||0)));
+      feed.innerHTML = list.length ? '' : 'Нет одобренных котиков';
+      list.forEach(c => feed.appendChild(createCatCard(c)));
+    };
+    document.getElementById('applyFilterBtn').onclick = renderFeed;
+    const updateAuthorFilter = () => {
+      const authors = new Set(cats.filter(c => c.status === 'approved').map(c => c.uploadedBy));
+      const sel = document.getElementById('filterAuthor');
+      sel.innerHTML = '<option value="">Все авторы</option>';
+      authors.forEach(a => sel.appendChild(new Option('@' + a, a)));
+    };
+
+    // ---------- ТОП ----------
+    const renderTop = () => {
+      const div = document.getElementById('top-list');
+      const stats = {};
+      cats.filter(c => c.status === 'approved').forEach(c => { stats[c.uploadedBy] = (stats[c.uploadedBy] || 0) + 1; });
+      const sorted = Object.entries(stats).sort((a, b) => b[1] - a[1]).slice(0, 10);
+      div.innerHTML = sorted.map(([nick, count]) => `<div style="animation: fadeInUp 0.3s ease; background:var(--card); margin:5px 0; padding:10px; border-radius:8px;">@${nick} (${count} одобр.) ${getUserAchievements(nick).map(a => `<span class="achievement">${a}</span>`).join('')}</div>`).join('') || 'Нет данных';
+    };
+
+    // ---------- ЧАТ ----------
+    const renderChatSearch = () => { document.getElementById('chat-window').classList.add('hidden'); document.getElementById('chatSearchInput').value = ''; document.getElementById('chatSearchResults').innerHTML = ''; };
+    document.getElementById('chatSearchInput').addEventListener('input', function () {
+      const q = this.value.trim().toLowerCase();
+      const div = document.getElementById('chatSearchResults');
+      if (!q) { div.innerHTML = ''; return; }
+      const filtered = users.filter(u => u.nickname !== currentUser?.nickname && u.nickname.toLowerCase().includes(q));
+      div.innerHTML = filtered.map(u => `<div class="search-result-item" data-nick="${u.nickname}">@${u.nickname}</div>`).join('') || '<div style="font-size:12px;">Никого не найдено</div>';
+    });
+    document.getElementById('chatSearchResults').addEventListener('click', e => {
+      const item = e.target.closest('.search-result-item');
+      if (!item) return;
+      openChat(item.dataset.nick);
+    });
+    const openChat = nick => {
+      document.getElementById('chat-window').classList.remove('hidden');
+      document.getElementById('chat-with').textContent = 'Диалог с @' + nick;
+      document.getElementById('chat-window').dataset.with = nick;
+      renderChatMessages();
+    };
+    const renderChatMessages = () => {
+      const withNick = document.getElementById('chat-window').dataset.with;
+      const msgs = messages.filter(m => (m.from === currentUser.nickname && m.to === withNick) || (m.from === withNick && m.to === currentUser.nickname));
+      document.getElementById('chat-messages').innerHTML = msgs.map(m => `<div class="chat-msg"><span class="sender">@${m.from}</span>: ${m.text} ${currentUser?.isSuperAdmin ? `<span class="delete-msg-btn" data-time="${m.time}">✖</span>` : ''}</div>`).join('');
+      document.querySelectorAll('.delete-msg-btn').forEach(b => b.onclick = e => { e.stopPropagation(); const t = parseInt(b.dataset.time); messages = messages.filter(m => m.time !== t); saveData('catapp_messages', messages); renderChatMessages(); });
+    };
+    document.getElementById('chat-send').onclick = () => {
+      const withNick = document.getElementById('chat-window').dataset.with;
+      const text = document.getElementById('chat-input').value.trim();
+      if (!text || !withNick) return;
+      messages.push({ from: currentUser.nickname, to: withNick, text, time: Date.now() });
+      saveData('catapp_messages', messages);
+      renderChatMessages();
+      document.getElementById('chat-input').value = '';
+    };
+
+    // ---------- ВСЕ ЧАТЫ (АДМИН) ----------
+    const renderAllChats = () => {
+      const div = document.getElementById('allchats-list'); div.innerHTML = '';
+      const pairs = new Map();
+      messages.forEach(m => { const key = [m.from, m.to].sort().join('↔'); if (!pairs.has(key)) pairs.set(key, []); pairs.get(key).push(m); });
+      if (!pairs.size) { div.innerHTML = 'Нет сообщений'; return; }
+      for (const [key, msgs] of pairs) {
+        const [a, b] = key.split('↔');
+        const cont = document.createElement('div'); cont.style.marginBottom = '10px'; cont.innerHTML = `<b>${a} ↔ ${b}</b>`;
+        const list = document.createElement('div'); list.style.maxHeight = '150px'; list.style.overflowY = 'auto';
+        msgs.forEach(m => {
+          const msg = document.createElement('div'); msg.innerHTML = `<span class="sender">@${m.from}</span>: ${m.text}`;
+          if (currentUser?.isSuperAdmin) { const del = document.createElement('span'); del.className = 'delete-msg-btn'; del.textContent = '✖'; del.onclick = () => { messages = messages.filter(x => x.time !== m.time); saveData('catapp_messages', messages); renderAllChats(); }; msg.appendChild(del); }
+          list.appendChild(msg);
+        });
+        cont.appendChild(list); div.appendChild(cont);
+      }
+    };
+    document.getElementById('allChatsSearchBtn').onclick = () => {
+      const q = document.getElementById('allChatsSearch').value.trim().toLowerCase();
+      const div = document.getElementById('allchats-list'); div.innerHTML = '';
+      const filtered = messages.filter(m => m.text.toLowerCase().includes(q));
+      if (!filtered.length) { div.innerHTML = 'Не найдено'; return; }
+      filtered.forEach(m => {
+        const msg = document.createElement('div'); msg.innerHTML = `<span class="sender">@${m.from} → @${m.to}</span>: ${m.text}`;
+        if (currentUser?.isSuperAdmin) { const del = document.createElement('span'); del.className = 'delete-msg-btn'; del.textContent = '✖'; del.onclick = () => { messages = messages.filter(x => x.time !== m.time); saveData('catapp_messages', messages); document.getElementById('allChatsSearchBtn').onclick(); }; msg.appendChild(del); }
+        div.appendChild(msg);
+      });
+    };
+
+    // ---------- МОДЕРАЦИЯ ----------
+    const renderAdmin = () => {
+      const div = document.getElementById('admin-list'); div.innerHTML = '';
+      cats.filter(c => c.status === 'pending').forEach(cat => {
+        const item = document.createElement('div'); item.className = 'admin-item';
+        item.innerHTML = `<img src="${cat.imageUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:50%;margin-right:10px;cursor:pointer;" onclick="openPhotoModal(${cat.id})"><span>${cat.name} (@${cat.uploadedBy})</span><div><button class="approve-btn" data-id="${cat.id}">✅</button><button class="delete-btn" data-id="${cat.id}">❌</button><button class="ban-btn" data-nick="${cat.uploadedBy}">🚫</button></div>`;
+        div.appendChild(item);
+      });
+      document.querySelectorAll('.approve-btn').forEach(b => b.onclick = function () { const cat = cats.find(c => c.id === parseInt(this.dataset.id)); if (cat) { cat.status = 'approved'; saveData('catapp_cats', cats); renderAdmin(); renderFeed(); updateAuthorFilter(); } });
+      document.querySelectorAll('.delete-btn').forEach(b => b.onclick = function () { cats = cats.filter(c => c.id !== parseInt(this.dataset.id)); saveData('catapp_cats', cats); renderAdmin(); });
+      document.querySelectorAll('.ban-btn').forEach(b => b.onclick = e => { e.stopPropagation(); showBanDialog(b.dataset.nick); });
+    };
+
+    // ---------- ПОЛЬЗОВАТЕЛИ ----------
+    document.getElementById('clearUsersBtn').onclick = () => { if (!currentUser?.isSuperAdmin) return; if (confirm('Удалить всех, кроме создателя?')) { users = users.filter(u => u.nickname === CREATOR_NICK); saveData('catapp_users', users); renderUsers(); } };
+    const renderUsers = () => {
+      const div = document.getElementById('users-list'); div.innerHTML = '';
+      const inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = 'Поиск по нику...'; inp.style.width = '200px'; inp.oninput = renderUsers; div.appendChild(inp);
+      const term = inp.value.toLowerCase();
+      users.filter(u => !term || u.nickname.toLowerCase().includes(term)).forEach(u => {
+        const item = document.createElement('div'); item.className = 'admin-item';
+        const dateStr = ts => new Date(ts).toLocaleString('ru-RU');
+        const online = u.online ? '🟢 в сети' : `Был: ${dateStr(u.lastSeen || 0)}`;
+        const reg = `Рег: ${dateStr(u.createdAt || 0)}`;
+        const ban = isBanned(u.nickname) ? ' 🚫 забанен' : '';
+        item.innerHTML = `<div><span class="author">@${u.nickname}</span> ${ban}<br><small>${reg}</small><br><small>${online}</small></div><div>${u.nickname !== CREATOR_NICK ? (isBanned(u.nickname) ? '<button class="unban-btn">✅ Разбанить</button>' : '<button class="ban-btn">🚫 Забанить</button>') : ''}</div>`;
+        item.querySelector('.author').onclick = () => openProfile(u.nickname);
+        if (u.nickname !== CREATOR_NICK) {
+          if (isBanned(u.nickname)) item.querySelector('.unban-btn').onclick = () => unbanUser(u.nickname);
+          else item.querySelector('.ban-btn').onclick = e => { e.stopPropagation(); showBanDialog(u.nickname); };
+        }
+        div.appendChild(item);
+      });
+    };
+
+    // ---------- ЖАЛОБЫ ----------
+    const renderReports = () => {
+      const div = document.getElementById('reports-list'); div.innerHTML = '';
+      cats.forEach(cat => {
+        (cat.reports || []).forEach((r, idx) => {
+          const item = document.createElement('div'); item.className = 'admin-item';
+          if (r.type === 'comment') {
+            const com = (cat.comments || []).find(c => c.id === r.commentId);
+            item.innerHTML = `<span>Жалоба на комм. к "${cat.name}" от @${r.by}: ${r.reason}<br><small>${com ? com.text : '(удалён)'}</small></span>
+              <div><button class="delete-post-btn" data-id="${cat.id}">Удалить пост</button><button class="dismiss-btn" data-catid="${cat.id}" data-idx="${idx}">Отклонить</button></div>`;
+          } else {
+            item.innerHTML = `<span>Жалоба на "${cat.name}" от @${r.by}: ${r.reason}</span>
+              <div><button class="delete-post-btn" data-id="${cat.id}">Удалить пост</button><button class="dismiss-btn" data-catid="${cat.id}" data-idx="${idx}">Отклонить</button></div>`;
+          }
+          div.appendChild(item);
+        });
+      });
+      document.querySelectorAll('.delete-post-btn').forEach(b => b.onclick = function () { const id = parseInt(this.dataset.id); cats = cats.filter(c => c.id !== id); saveData('catapp_cats', cats); actionLog.push({ action: 'delete_post_report', by: currentUser.nickname, target: id, time: Date.now() }); saveData('catapp_actionlog', actionLog); renderReports(); });
+      document.querySelectorAll('.dismiss-btn').forEach(b => b.onclick = function () { const catId = parseInt(this.dataset.catid); const idx = parseInt(this.dataset.idx); const cat = cats.find(c => c.id === catId); cat.reports.splice(idx, 1); saveData('catapp_cats', cats); renderReports(); });
+    };
+
+    // ---------- ИСТОРИЯ ----------
+    const renderActionLog = () => { document.getElementById('actionlog-list').innerHTML = actionLog.map(l => `<div>${new Date(l.time).toLocaleString()} — ${l.by} ${l.action} ${l.target} ${l.reason||''}</div>`).join(''); };
+
+    // ---------- ПРОФИЛЬ ----------
+    const openProfile = (nickname, silent) => {
+      if (!silent) showSection('profile-section');
+      document.getElementById('profile-section').dataset.nick = nickname;
+      document.getElementById('profile-title').innerHTML = `Профиль @${nickname} ` + getUserAchievements(nickname).map(a => `<span class="achievement">${a}</span>`).join('');
+      const msgBtn = document.getElementById('profileMessageBtn');
+      const subBtn = document.getElementById('profileSubscribeBtn');
+      if (currentUser && currentUser.nickname !== nickname) {
+        msgBtn.classList.remove('hidden'); msgBtn.onclick = () => { showSection('chat-section'); openChat(nickname); };
+        subBtn.classList.remove('hidden');
+        const isSub = (currentUser.subscriptions || []).includes(nickname);
+        subBtn.textContent = isSub ? '✅ Вы подписаны' : '⭐ Подписаться';
+        subBtn.onclick = () => {
+          if (!currentUser.subscriptions) currentUser.subscriptions = [];
+          if (currentUser.subscriptions.includes(nickname)) currentUser.subscriptions = currentUser.subscriptions.filter(n => n !== nickname);
+          else currentUser.subscriptions.push(nickname);
+          const u = users.find(u => u.nickname === currentUser.nickname);
+          if (u) { u.subscriptions = currentUser.subscriptions; saveData('catapp_users', users); }
+          openProfile(nickname, true);
+        };
+      } else { msgBtn.classList.add('hidden'); subBtn.classList.add('hidden'); }
+      const cont = document.getElementById('profile-cats'); cont.innerHTML = '';
+      cats.filter(c => c.status === 'approved' && c.uploadedBy === nickname).forEach(c => cont.appendChild(createCatCard(c)));
+      if (!cont.innerHTML) cont.innerHTML = 'Нет одобренных котиков';
+    };
+
+    // ---------- ЗАГРУЗКА ----------
+    document.getElementById('uploadCatBtn').onclick = () => {
+      if (!currentUser || isBanned(currentUser.nickname)) return document.getElementById('upload-status').textContent = 'Недоступно';
+      const file = document.getElementById('catPhoto').files[0];
+      const name = document.getElementById('catName').value.trim();
+      if (!file || !name) return document.getElementById('upload-status').textContent = 'Заполните поля';
+      const reader = new FileReader();
+      reader.onload = e => {
+        cats.push({ id: Date.now(), name, imageUrl: e.target.result, status: 'pending', uploadedBy: currentUser.nickname, description: document.getElementById('catDesc').value.trim(), likes: { heart: [], paw: [], cat: [] }, comments: [], reports: [] });
+        saveData('catapp_cats', cats);
+        document.getElementById('upload-status').textContent = 'Отправлено на модерацию';
+        document.getElementById('catName').value = ''; document.getElementById('catDesc').value = ''; document.getElementById('catPhoto').value = '';
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // ---------- МОДАЛЬНОЕ ОКНО ----------
+    let currentModalCatId = null;
+    const openPhotoModal = catId => {
+      const cat = cats.find(c => c.id === catId);
+      if (!cat) return;
+      currentModalCatId = catId;
+      document.getElementById('modal-image').src = cat.imageUrl;
+      updateModal(cat);
+      document.getElementById('photo-modal').classList.remove('hidden');
+    };
+    const updateModal = cat => {
+      if (!cat.likes) cat.likes = { heart: [], paw: [], cat: [] };
+      document.querySelectorAll('.modal-like').forEach(b => {
+        const t = b.dataset.type;
+        b.querySelector('.reaction-count').textContent = cat.likes[t].length;
+        b.classList.toggle('active', currentUser && cat.likes[t].includes(currentUser.nickname));
+      });
+      const comDiv = document.getElementById('modal-comments');
+      comDiv.innerHTML = (cat.comments || []).map((c, i) => `<div class="comment"><span class="nick">@${c.nickname}</span>: ${c.text} ${currentUser?.isSuperAdmin ? `<span class="delete-comment-btn" data-idx="${i}">✖</span>` : ''}</div>`).join('');
+      comDiv.querySelectorAll('.nick').forEach(el => el.onclick = () => openProfile(el.textContent.slice(1)));
+      comDiv.querySelectorAll('.delete-comment-btn').forEach(el => el.onclick = e => { e.stopPropagation(); deleteComment(cat.id, parseInt(el.dataset.idx)); });
+    };
+    document.querySelector('#photo-modal .close-btn').onclick = () => { document.getElementById('photo-modal').classList.add('hidden'); currentModalCatId = null; };
+    document.querySelectorAll('.modal-like').forEach(b => b.onclick = e => {
+      if (!currentUser || isBanned(currentUser.nickname) || !currentModalCatId) return;
+      const cat = cats.find(c => c.id === currentModalCatId);
+      if (!cat) return;
+      if (!cat.likes) cat.likes = { heart: [], paw: [], cat: [] };
+      const t = b.dataset.type;
+      const arr = cat.likes[t];
+      const idx = arr.indexOf(currentUser.nickname);
+      idx === -1 ? (arr.push(currentUser.nickname), settings.emojiAnim && spawnEmoji(b.textContent.trim()[0], e.clientX, e.clientY)) : arr.splice(idx, 1);
+      saveData('catapp_cats', cats);
+      updateModal(cat);
+    });
+    document.getElementById('modal-comment-send').onclick = () => {
+      if (!currentUser || isBanned(currentUser.nickname) || !currentModalCatId) return;
+      const text = document.getElementById('modal-comment-input').value.trim();
+      if (!text) return;
+      handleComment(currentModalCatId, text);
+      document.getElementById('modal-comment-input').value = '';
+    };
+
+    // ---------- НАСТРОЙКИ ----------
+    document.getElementById('openSettingsBtn').onclick = () => {
+      document.getElementById('settingCardAnim').checked = settings.cardAnim;
+      document.getElementById('settingEmojiAnim').checked = settings.emojiAnim;
+      document.getElementById('settingFadeAnim').checked = settings.fadeAnim;
+      document.getElementById('settings-modal').classList.remove('hidden');
+    };
+    document.getElementById('closeSettingsBtn').onclick = () => document.getElementById('settings-modal').classList.add('hidden');
+    document.getElementById('saveSettingsBtn').onclick = () => {
+      settings.cardAnim = document.getElementById('settingCardAnim').checked;
+      settings.emojiAnim = document.getElementById('settingEmojiAnim').checked;
+      settings.fadeAnim = document.getElementById('settingFadeAnim').checked;
+      saveData('catapp_settings', settings);
+      applyTheme();
+      document.getElementById('settings-modal').classList.add('hidden');
+    };
+
+    // Инициализация
+    updateAuthorFilter();
+    updateUI();
+    window.addEventListener('beforeunload', () => { if (currentUser) { const u = users.find(u => u.nickname === currentUser.nickname); if (u) { u.online = false; u.lastSeen = Date.now(); saveData('catapp_users', users); } } });
+    setInterval(() => {
+      if (currentUser && isBanned(currentUser.nickname)) { alert('Бан!'); currentUser = null; updateUI(); }
+      let changed = false;
+      users.forEach(u => { if (u.bannedUntil && Date.now() > u.bannedUntil) { u.bannedUntil = null; u.banReason = ''; changed = true; } });
+      if (currentUser) { const u = users.find(u => u.nickname === currentUser.nickname); if (u) { u.lastSeen = Date.now(); changed = true; } }
+      if (changed) saveData('catapp_users', users);
+    }, 30000);
+  </script>
+</body>
+</html>
